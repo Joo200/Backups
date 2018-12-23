@@ -1,0 +1,8 @@
+main: "de.terraconia.backups.plugin.BackupPlugin"
+author: "Joo200"
+version: 1.0
+name: "BackupPlugin"
+api-version: 1.13
+
+commands:
+  backupmanager:

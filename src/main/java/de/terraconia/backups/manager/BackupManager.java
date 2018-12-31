@@ -111,12 +111,9 @@ public abstract class BackupManager {
 
     private static boolean findMaterial(BlockType type, Map<Material, Integer> amountByType) {
         Material adapt = BukkitAdapter.adapt(type);
-        boolean containsKey = amountByType.containsKey(adapt);
-        amountByType.computeIfPresent(adapt, (material, integer) -> {
-            int x = --integer;
-            return (x == 1) ? null : x;
-        });
-        return containsKey;
+        boolean containsMaterial = amountByType.containsKey(adapt);
+        amountByType.computeIfPresent(adapt, (material, amount) -> (--amount == 0) ? null : amount);
+        return containsMaterial;
     }
 
     public CompletableFuture<RegionBlocks> getNeededMaterials(World world,
@@ -170,8 +167,6 @@ public abstract class BackupManager {
         });
         return future;
     }
-
-    ;
 
     public boolean hasBackup(String path) {
         return getSchematicManager().hasSchematic(path);

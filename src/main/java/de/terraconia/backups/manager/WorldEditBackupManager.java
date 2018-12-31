@@ -21,17 +21,18 @@ import com.sk89q.worldedit.world.block.BaseBlock;
 import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import de.terraconia.backups.blockbag.CityBlockBag;
+import de.terraconia.backups.events.RegionRestoreEvent;
 import de.terraconia.backups.plugin.BackupPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.Container;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class WorldEditBackupManager extends BackupManager {
@@ -42,7 +43,11 @@ public class WorldEditBackupManager extends BackupManager {
     }
 
     @Override
-    public void backupSubRegion(ProtectedRegion protectedRegion, World world, String schematicPath) throws IOException, WorldEditException {
+    public void backupSubRegion(
+            JavaPlugin requester,
+            ProtectedRegion protectedRegion,
+            World world,
+            String schematicPath) throws IOException, WorldEditException {
         Region region = toRegion(world, protectedRegion);
 
         BlockArrayClipboard clipboard = new BlockArrayClipboard(region);
@@ -55,13 +60,16 @@ public class WorldEditBackupManager extends BackupManager {
 
     @Override
     public Map<BlockType, Integer> restoreSubRegion(
+            JavaPlugin requester,
             ProtectedRegion subRegion,
             Set<Location> cityChestLocations,
             World world,
             // int worldId,
             boolean ignoreChests,
             String schematicPath) throws WorldEditException, IOException {
-        Logger log = Bukkit.getLogger();
+        RegionRestoreEvent restoreEvent = new RegionRestoreEvent(requester, subRegion, world);
+        Bukkit.getPluginManager().callEvent(restoreEvent);
+        if(restoreEvent.isCancelled()) return null;
         // Getting a set of containers for the items.
         Set<Container> chests = cityChestLocations.stream().map(Location::getBlock).map(Block::getState)
                 .filter(c -> c instanceof Container).map(c -> (Container)c).collect(Collectors.toSet());

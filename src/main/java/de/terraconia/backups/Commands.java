@@ -56,15 +56,6 @@ public class Commands implements CommandExecutor {
         }
         if(strings[0].equalsIgnoreCase("save")) {
             //SurvivalSubRegion subRegion = SurvivalPlugin.getInstance().getSurvivalRegionManager().getSubRegionByID(id);
-            try {
-                String path = plugin.getDataFolder().getAbsolutePath() + "/snapshots/" + strings[1] + ".schematic";
-                plugin.getManager().backupSubRegion(rg, lp.getWorld(), path);
-
-                commandSender.sendMessage("Erfolgreich.");
-            } catch (IOException | WorldEditException e) {
-                e.printStackTrace();
-                commandSender.sendMessage("Fehler.");
-            }
         } else if(strings[0].equalsIgnoreCase("load") || strings[0].equalsIgnoreCase("needed")) {
             if(strings.length < 5) {
                 commandSender.sendMessage("5 Argumente erfordert.");
@@ -83,41 +74,6 @@ public class Commands implements CommandExecutor {
             player.sendMessage("Chest: " + x + ", " + y + ", " + z);
             Set<Location> loc = Collections.singleton(new Location(player.getWorld(), x, y, z));
             //SurvivalSubRegion subRegion = SurvivalPlugin.getInstance().getSurvivalRegionManager().getSubRegionByID(id);
-            try {
-                String path = plugin.getDataFolder().getAbsolutePath() + "/snapshots/" + strings[1] + ".schematic";
-                if(strings[0].equalsIgnoreCase("load")) {
-                    plugin.getManager().restoreSubRegion(rg, loc, lp.getWorld(), false, path)
-                            .forEach(((blockType, integer) -> {
-                        player.sendMessage("BlockType: " + blockType.getId() + ": " + integer);
-                    }));
-                }
-                else {
-                    player.sendMessage("Type        - PLACED - IN BAG - DENIED - MISSING - FREE.");
-                    plugin.getManager().getNeededMaterials(lp.getWorld(), rg, loc, path).getStorageContent().forEach(
-                            (type, storage) -> {
-                                player.sendMessage(
-                                        String.format("%1$-15s", type.getName()) +
-                                        " - " + storage.get(RegionBlocks.Status.PLACED) +
-                                        " - " + storage.get(RegionBlocks.Status.IN_BLOCKBAG) +
-                                        " - " + storage.get(RegionBlocks.Status.DENIED) +
-                                        " - " + storage.get(RegionBlocks.Status.MISSING) +
-                                        " - " + storage.get(RegionBlocks.Status.FREE));
-                            }
-                    );
-
-                    return true;
-                }
-                commandSender.sendMessage("Erfolgreich.");
-            } catch (IOException e) {
-                e.printStackTrace();
-                commandSender.sendMessage("Fehler.");
-            } catch (MaxChangedBlocksException e) {
-                e.printStackTrace();
-                commandSender.sendMessage("Zu viele Bloecke.");
-            } catch (WorldEditException e) {
-                commandSender.sendMessage("WE Fehler.");
-                e.printStackTrace();
-            }
 
         }
 

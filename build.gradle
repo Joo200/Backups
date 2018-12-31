@@ -10,6 +10,8 @@ repositories {
     maven { url "https://hub.spigotmc.org/nexus/content/repositories/snapshots" }
     maven { url "http://repo.mikeprimm.com/" }
     maven { url "https://oss.sonatype.org/content/repositories/snapshots"}
+    
+    maven { url "http://feuerstern.bplaced.net/repo/" }
 }
 
 dependencies {
@@ -21,5 +23,5 @@ dependencies {
     compile group: 'com.sk89q.worldedit', name: 'worldedit-bukkit', version: '7.0.0-SNAPSHOT', changing: true, transitive: false
     compile group: 'com.sk89q.worldedit', name: 'worldedit-core', version: '7.0.0-SNAPSHOT', changing: true, transitive: false
     //TODO: Find repo for LWC
-    //compile group: 'com.griefcraft.lwc', name: 'lwc', version: '4.4.0', changing: true, transitive: false
+    compile group: 'com.griefcraft.lwc', name: 'LWCPlugin', version: '4.5.0-SNAPSHOT', changing: true, transitive: false
 }

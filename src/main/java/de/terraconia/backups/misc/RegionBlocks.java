@@ -6,9 +6,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by Johannes on 13.12.2018.
- */
 public class RegionBlocks {
     private Map<BlockType, StorageBlocks> storageContent = new HashMap<>();
 

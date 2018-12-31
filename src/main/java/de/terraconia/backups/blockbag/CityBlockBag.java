@@ -1,37 +1,26 @@
 package de.terraconia.backups.blockbag;
 
-import com.sk89q.jnbt.CompoundTag;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldedit.bukkit.BukkitWorld;
-import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.inventory.BlockBag;
 import com.sk89q.worldedit.extent.inventory.BlockBagException;
 import com.sk89q.worldedit.extent.inventory.OutOfBlocksException;
 import com.sk89q.worldedit.extent.inventory.UnplaceableBlockException;
-import com.sk89q.worldedit.history.changeset.ChangeSet;
-import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.util.Location;
-import com.sk89q.worldedit.world.NullWorld;
-import com.sk89q.worldedit.world.World;
-import com.sk89q.worldedit.world.block.BaseBlock;
 import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.world.block.BlockType;
 import org.bukkit.Bukkit;
-import org.bukkit.block.Block;
 import org.bukkit.block.Container;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by Joo200 on 08.11.2018.
  */
 public class CityBlockBag extends BlockBag {
     private Map<Container, ItemStack[]> inventories = new HashMap<>();
-    private Map<BlockVector3, ItemStack[]> containerInventories = new HashMap<>();
     private final Set<BlockType> dontReplace;
     private final Set<BlockType> replaceFree;
 
@@ -47,8 +36,7 @@ public class CityBlockBag extends BlockBag {
         if(inventories.isEmpty()) return;
         for(Map.Entry<Container, ItemStack[]> inv : inventories.entrySet()) {
             if(inv.getValue() == null) {
-                ItemStack is[];// = inv.getKey().getInventory().getContents().clone();
-                is = Arrays.copyOf(inv.getKey().getInventory().getContents(), inv.getKey().getInventory().getContents().length);
+                ItemStack[] is = inv.getKey().getInventory().getContents();
                 inv.setValue(is);
             }
         }
@@ -137,7 +125,6 @@ public class CityBlockBag extends BlockBag {
 
     @Override
     public void flushChanges() {
-        Bukkit.getLogger().info("Flushing Changes.");
         for(Map.Entry<Container, ItemStack[]> inv : inventories.entrySet()) {
             inv.getKey().getInventory().setContents(inv.getValue());
             inv.setValue(null);

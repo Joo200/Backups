@@ -6,6 +6,7 @@ import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import de.terraconia.backups.plugin.BackupPlugin;
 import org.bukkit.Location;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
 import java.util.Map;
@@ -20,15 +21,12 @@ public class AweBackupManager extends BackupManager {
     }
 
     @Override
-    protected void backupSubRegion(ProtectedRegion protectedRegion, World world, String schematicPath)
-            throws IOException, WorldEditException {
+    public void backupSubRegion(JavaPlugin requester, ProtectedRegion protectedRegion, World world, String schematicPath) throws IOException, WorldEditException {
 
     }
 
     @Override
-    public Map<BlockType, Integer> restoreSubRegion(ProtectedRegion subRegion, Set<Location> cityChestLocations,
-                                                    World world, boolean ignoreChests,
-                                                    String schematicPath) throws WorldEditException, IOException {
+    public Map<BlockType, Integer> restoreSubRegion(JavaPlugin requester, ProtectedRegion subRegion, Set<Location> cityChestLocations, World world, boolean ignoreChests, String schematicPath) throws WorldEditException, IOException {
         return null;
     }
 }

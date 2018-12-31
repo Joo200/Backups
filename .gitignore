@@ -4,17 +4,18 @@
 .settings/
 
 # Intellij
-.idea/workspace.xml
-.idea/tasks.xml
-.idea/libraries
+**/.idea
 *.iws
 
 # Mac
 .DS_Store
 
 # Gradle
-.gradle
+**/.gradle
 /local.properties
 /build
 /out
 /bin/
+
+**/out
+**/build

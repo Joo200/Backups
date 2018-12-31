@@ -130,15 +130,15 @@ public abstract class BackupManager {
                                    String schematicPath)
             throws IOException, MaxChangedBlocksException {
         // Getting a set of containers for the items.
-        Set<Container> chests = cityChests.stream().map(Location::getBlock).map(Block::getState)
-                .filter(c -> c instanceof Container).map(c -> (Container)c).collect(Collectors.toSet());
-        Clipboard toCopy = schematicManager.loadSchematic(schematicPath);
+        List<ItemStack> itemStacks = cityChests.stream()
+                .map(location -> location.getBlock().getState())
+                .filter(c -> c instanceof Container)
+                .map(c -> ((Container) c).getSnapshotInventory())
+                .map(Inventory::getContents)
+                .flatMap(Arrays::stream)
+                .collect(Collectors.toList());
 
-        List<ItemStack> itemStacks =
-                chests.stream().map(Container::getSnapshotInventory).map(Arrays::asList)
-                .collect(Collectors.toList()).stream().flatMap(Collection::stream)
-                .map(Inventory::getContents).flatMap(Arrays::stream)
-                .filter(Objects::nonNull).collect(Collectors.toList());
+        Clipboard toCopy = schematicManager.loadSchematic(schematicPath);
 
         Region weRegion = toRegion(world, region);
         BlockArrayClipboard clipboard = new BlockArrayClipboard(weRegion);

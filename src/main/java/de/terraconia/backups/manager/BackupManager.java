@@ -36,6 +36,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingInt;
+
 public abstract class BackupManager {
 
     private static final Material[] defaultFreeBlockTypes = {
@@ -78,10 +81,10 @@ public abstract class BackupManager {
     }
 
     public abstract void backupSubRegion(
-                                        JavaPlugin requester,
-                                        ProtectedRegion protectedRegion,
-                                        World world,
-                                        String schematicPath) throws IOException, WorldEditException;
+            JavaPlugin requester,
+            ProtectedRegion protectedRegion,
+            World world,
+            String schematicPath) throws IOException, WorldEditException;
 
     public abstract Map<BlockType, Integer> restoreSubRegion(
             JavaPlugin requester,
@@ -94,11 +97,11 @@ public abstract class BackupManager {
 
 
     public static Region toRegion(World world, ProtectedRegion region) {
-        if(region instanceof ProtectedCuboidRegion) {
+        if (region instanceof ProtectedCuboidRegion) {
             BlockVector3 min = region.getMinimumPoint();
             BlockVector3 max = region.getMaximumPoint();
             return new CuboidRegion(world, min, max);
-        } else if(region instanceof ProtectedPolygonalRegion) {
+        } else if (region instanceof ProtectedPolygonalRegion) {
             return new Polygonal2DRegion(world, region.getPoints(),
                     region.getMinimumPoint().getY(), region.getMaximumPoint().getY());
         } else {
@@ -106,37 +109,34 @@ public abstract class BackupManager {
         }
     }
 
-    private static boolean findMaterial(BlockType type, List<ItemStack> itemStacks) {
-        for(ItemStack is : itemStacks) {
-            if (!BukkitAdapter.equals(type, is.getType())) {
-                // Type id doesn't fit
-                continue;
-            }
-            int amount = is.getAmount();
-            if(amount > 1) {
-                is.setAmount(amount-1);
-                return true;
-            } else if(amount == 1) {
-                itemStacks.remove(is);
-                return true;
-            }
-        }
-        return false;
+    private static boolean findMaterial(BlockType type, Map<Material, Integer> amountByType) {
+        Material adapt = BukkitAdapter.adapt(type);
+        boolean containsKey = amountByType.containsKey(adapt);
+        amountByType.computeIfPresent(adapt, (material, integer) -> {
+            int x = --integer;
+            return (x == 1) ? null : x;
+        });
+        return containsKey;
     }
 
     public CompletableFuture<RegionBlocks> getNeededMaterials(World world,
-                                   ProtectedRegion region,
-                                   Set<Location> cityChests,
-                                   String schematicPath)
+                                                              ProtectedRegion region,
+                                                              Set<Location> cityChests,
+                                                              String schematicPath)
             throws IOException, MaxChangedBlocksException {
-        // Getting a set of containers for the items.
-        List<ItemStack> itemStacks = cityChests.stream()
+
+        Map<Material, Integer> amountByType = cityChests.stream()
                 .map(location -> location.getBlock().getState())
                 .filter(c -> c instanceof Container)
                 .map(c -> ((Container) c).getSnapshotInventory())
                 .map(Inventory::getContents)
                 .flatMap(Arrays::stream)
-                .collect(Collectors.toList());
+                .filter(Objects::nonNull)
+                .collect(groupingBy(
+                        ItemStack::getType,
+                        () -> new EnumMap<>(Material.class),
+                        summingInt(ItemStack::getAmount)
+                ));
 
         Clipboard toCopy = schematicManager.loadSchematic(schematicPath);
 
@@ -154,29 +154,24 @@ public abstract class BackupManager {
             for (BlockVector3 blockVector3 : weRegion) {
                 BlockType newBlock = toCopy.getBlock(blockVector3).getBlockType();
                 BlockType currentBlock = world.getBlock(blockVector3).getBlockType();
-                if(newBlock.equals(currentBlock)) {
+                if (newBlock.equals(currentBlock)) {
                     blocks.addBlock(newBlock, RegionBlocks.Status.PLACED);
-                    continue;
-
-                }
-                if(deniedBlocks.contains(newBlock)) {
+                } else if (deniedBlocks.contains(newBlock)) {
                     blocks.addBlock(newBlock, RegionBlocks.Status.DENIED);
-                    continue;
-                }
-                if(freeBlocks.contains(newBlock)) {
+                } else if (freeBlocks.contains(newBlock)) {
                     blocks.addBlock(newBlock, RegionBlocks.Status.FREE);
-                    continue;
-                }
-                if(findMaterial(newBlock, itemStacks)) {
+                } else if (findMaterial(newBlock, amountByType)) {
                     blocks.addBlock(newBlock, RegionBlocks.Status.IN_BLOCKBAG);
-                    continue;
+                } else {
+                    blocks.addBlock(newBlock, RegionBlocks.Status.MISSING);
                 }
-                blocks.addBlock(newBlock, RegionBlocks.Status.MISSING);
             }
             future.complete(blocks);
         });
         return future;
-    };
+    }
+
+    ;
 
     public boolean hasBackup(String path) {
         return getSchematicManager().hasSchematic(path);

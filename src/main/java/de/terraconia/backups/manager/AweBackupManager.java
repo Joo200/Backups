@@ -88,10 +88,6 @@ public class AweBackupManager extends BackupManager {
         Bukkit.getPluginManager().callEvent(restoreEvent);
         if(restoreEvent.isCancelled()) return null;
 
-        IThreadSafeEditSession session = factory.getThreadSafeEditSession(world, -1, bag);
-        Mask mask = Masks.negate(new BlockTypeMask(session, getDeniedBlocks()));
-        session.setMask(mask);
-
         Clipboard toCopy = null;
         try {
             toCopy = getSchematicManager().loadSchematic(schematicPath);
@@ -109,7 +105,7 @@ public class AweBackupManager extends BackupManager {
                 new ClipboardHolder(toCopy), false);
         //TODO: Listener
         AsyncWorldEditQueue queue = new AsyncWorldEditQueue(player, world, "Grundstückswiederherstellung", bag);
-        queue.setBlockMask(mask);
+        queue.setBlockMask(new BlockTypeMask(queue.getEditSession(), getDeniedBlocks()));
         queue.addJob(action);
         queue.start();
         return queue.getFuture().thenApply(aBoolean ->

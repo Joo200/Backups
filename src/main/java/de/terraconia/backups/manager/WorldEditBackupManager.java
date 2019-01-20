@@ -1,7 +1,5 @@
 package de.terraconia.backups.manager;
 
-import com.sk89q.jnbt.CompoundTag;
-import com.sk89q.jnbt.Tag;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
@@ -13,26 +11,26 @@ import com.sk89q.worldedit.function.mask.Masks;
 import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
 import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
-import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.World;
-import com.sk89q.worldedit.world.block.BaseBlock;
 import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import de.terraconia.backups.blockbag.CityBlockBag;
 import de.terraconia.backups.events.RegionRestoreEvent;
+import de.terraconia.backups.events.RegionRestoreFinishEvent;
 import de.terraconia.backups.plugin.BackupPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.Container;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class WorldEditBackupManager extends BackupManager {
@@ -59,31 +57,50 @@ public class WorldEditBackupManager extends BackupManager {
     }
 
     @Override
-    public Map<BlockType, Integer> restoreSubRegion(
+    public CompletableFuture<Map<BlockType, Integer>> restoreSubRegion(
             JavaPlugin requester,
+            Player player,
             ProtectedRegion subRegion,
             Set<Location> cityChestLocations,
             World world,
-            // int worldId,
-            boolean ignoreChests,
-            String schematicPath) throws WorldEditException, IOException {
-        RegionRestoreEvent restoreEvent = new RegionRestoreEvent(requester, subRegion, world);
-        Bukkit.getPluginManager().callEvent(restoreEvent);
-        if(restoreEvent.isCancelled()) return null;
+            String schematicPath) {
         // Getting a set of containers for the items.
         Set<Container> chests = cityChestLocations.stream().map(Location::getBlock).map(Block::getState)
                 .filter(c -> c instanceof Container).map(c -> (Container)c).collect(Collectors.toSet());
+        CityBlockBag bag = new CityBlockBag(chests, getDeniedBlocks(), getFreeBlocks());
+        return restoreSubRegion(requester, player, subRegion, bag, world, schematicPath);
+    }
+
+    @Override
+    public CompletableFuture<Map<BlockType, Integer>> restoreSubRegion(JavaPlugin requester,
+                                                                       Player player,
+                                                                       ProtectedRegion subRegion,
+                                                                       CityBlockBag bag,
+                                                                       World world,
+                                                                       String schematicPath) {
+        RegionRestoreEvent restoreEvent = new RegionRestoreEvent(requester, subRegion, world);
+        Bukkit.getPluginManager().callEvent(restoreEvent);
+        if(restoreEvent.isCancelled()) return null;
+
         EditSession session = WorldEdit.getInstance().getEditSessionFactory()
                 .getEditSession(world, 500);
-        Clipboard toCopy = getSchematicManager().loadSchematic(schematicPath);
+        Clipboard toCopy = null;
+        try {
+            toCopy = getSchematicManager().loadSchematic(schematicPath);
+        } catch (IOException e) {
+            return CompletableFuture.failedFuture(e);
+        }
+        try {
+            removeInventory(toCopy);
+        } catch (WorldEditException e) {
+            return CompletableFuture.failedFuture(e);
+        }
 
-        CityBlockBag bag = new CityBlockBag(chests, getDeniedBlocks(), getFreeBlocks());
-        session.setBlockBag(bag);
+        if(bag != null) session.setBlockBag(bag);
 
         Mask mask = Masks.negate(new BlockTypeMask(session, getDeniedBlocks()));
         session.setMask(mask);
 
-        removeInventory(toCopy);
 
         Operation operation = new ClipboardHolder(toCopy)
                 .createPaste(session)
@@ -91,22 +108,15 @@ public class WorldEditBackupManager extends BackupManager {
                 .ignoreAirBlocks(false)
                 .build();
 
-        Operations.complete(operation);
-        session.flushSession();
-        return session.popMissingBlocks();
-    }
-
-    public static void removeInventory(Clipboard clipboard) throws WorldEditException {
-        for (BlockVector3 vector3 : clipboard.getRegion()) {
-            BaseBlock block = clipboard.getFullBlock(vector3);
-            if(block.getNbtData() != null && block.getNbtData().getListTag("Items") != null) {
-                CompoundTag nbtData = block.getNbtData();
-                Map<String, Tag> newNbtData = new HashMap<>(nbtData.getValue());
-                newNbtData.remove("Items");
-                CompoundTag compoundTag = nbtData.setValue(newNbtData);
-                BaseBlock newBaseBlock = block.toBaseBlock(compoundTag);
-                clipboard.setBlock(vector3, newBaseBlock);
-            }
+        try {
+            Operations.complete(operation);
+        } catch (WorldEditException e) {
+            return CompletableFuture.failedFuture(e);
         }
+        session.flushSession();
+
+        RegionRestoreFinishEvent finishEvent = new RegionRestoreFinishEvent(requester, subRegion, world);
+        Bukkit.getPluginManager().callEvent(finishEvent);
+        return CompletableFuture.completedFuture(session.popMissingBlocks());
     }
 }

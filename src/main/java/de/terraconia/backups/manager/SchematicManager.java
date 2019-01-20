@@ -1,4 +1,4 @@
-package de.terraconia.backups.plugin;
+package de.terraconia.backups.manager;
 
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.*;
@@ -18,11 +18,17 @@ public class SchematicManager {
 
     public void saveSubRegionSchematic(String path, Clipboard clipboard) throws IOException {
         File file = new File(path);
+        if(!file.isAbsolute()) {
+            file = new File(this.baseDir + path);
+        }
         saveClipboard(clipboard, file);
     }
 
     public boolean hasSchematic(String path) {
         File file = new File(path);
+        if(!file.isAbsolute()) {
+            file = new File(this.baseDir + path);
+        }
         return file.exists();
     }
 
@@ -57,7 +63,6 @@ public class SchematicManager {
         Clipboard clipboard = reader.read();
         closer.close();
         return clipboard;
-
     }
 
     private void saveClipboard(Clipboard clipboard, File file) throws IOException {

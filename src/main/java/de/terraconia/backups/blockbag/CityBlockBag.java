@@ -35,6 +35,7 @@ public class CityBlockBag extends BlockBag {
     private void loadInventory() {
         if(inventories.isEmpty()) return;
         for(Map.Entry<Container, ItemStack[]> inv : inventories.entrySet()) {
+            inv.getKey().getWorld().loadChunk(inv.getKey().getLocation().getChunk());
             if(inv.getValue() == null) {
                 ItemStack[] is = inv.getKey().getInventory().getContents();
                 inv.setValue(is);
@@ -126,6 +127,7 @@ public class CityBlockBag extends BlockBag {
     @Override
     public void flushChanges() {
         for(Map.Entry<Container, ItemStack[]> inv : inventories.entrySet()) {
+            inv.getKey().getWorld().loadChunk(inv.getKey().getLocation().getChunk());
             inv.getKey().getInventory().setContents(inv.getValue());
             inv.setValue(null);
         }

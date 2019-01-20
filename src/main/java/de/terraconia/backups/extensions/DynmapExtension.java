@@ -1,9 +1,7 @@
 package de.terraconia.backups.extensions;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import de.terraconia.backups.events.RegionRestoreEvent;
 import de.terraconia.backups.events.RegionRestoreFinishEvent;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.event.EventHandler;

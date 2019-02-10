@@ -1,32 +1,37 @@
 package de.terraconia.backups.manager;
 
-import com.sk89q.jnbt.CompoundTag;
-import com.sk89q.jnbt.Tag;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.MaxChangedBlocksException;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.extent.NullExtent;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
+import com.sk89q.worldedit.extent.inventory.BlockBag;
+import com.sk89q.worldedit.function.mask.BlockTypeMask;
+import com.sk89q.worldedit.function.mask.Masks;
 import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.regions.CuboidRegion;
-import com.sk89q.worldedit.regions.Polygonal2DRegion;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.world.World;
-import com.sk89q.worldedit.world.block.BaseBlock;
 import com.sk89q.worldedit.world.block.BlockType;
-import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
-import com.sk89q.worldguard.protection.regions.ProtectedPolygonalRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import de.terraconia.backups.blockbag.CityBlockBag;
+import de.terraconia.backups.events.RegionEvent;
+import de.terraconia.backups.events.RegionFinishEvent;
+import de.terraconia.backups.extensions.AbstractExtension;
+import de.terraconia.backups.helper.SchematicManager;
+import de.terraconia.backups.impl.AsyncWorldEditImpl;
+import de.terraconia.backups.impl.WorldEditImpl;
 import de.terraconia.backups.misc.RegionBlocks;
 import de.terraconia.backups.plugin.BackupPlugin;
+import de.terraconia.backups.tasks.SchematicToRegionTask;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.block.Container;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -38,98 +43,73 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static de.terraconia.backups.constants.BlockConstants.defaultFreeBlockTypes;
+import static de.terraconia.backups.constants.BlockConstants.notAllowedBlockTypes;
+import static de.terraconia.backups.helper.WorldEditHelper.toRegion;
+import static de.terraconia.backups.misc.InventoryRemover.removeInventory;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
 
-public abstract class BackupManager {
+public class BackupManager extends AbstractManager {
 
-    private static final Material[] defaultFreeBlockTypes = {
-            Material.AIR,
-            Material.DIRT,
-            Material.GRASS,
-            Material.STONE,
-            //Material.SAND.ordinal(),
-            Material.WATER,
-            Material.FIRE,
-            Material.COBBLESTONE
-    };
-    private static final Material[] notAllowedBlockTypes = {
-            // sowie Ageable
-            Material.BEDROCK,
-            Material.PUMPKIN,
-            Material.MELON,
-    };
-    private SchematicManager schematicManager;
-
-    private Set<BlockType> freeBlocks = new HashSet<>();
-    private Set<BlockType> deniedBlocks = new HashSet<>();
-
-    private BackupPlugin plugin;
+    private List<BlockType> defaultBlocked = new ArrayList<>();
+    private List<BlockType> defaultFree = new ArrayList<>();
 
     public BackupManager(BackupPlugin plugin) {
-        this.schematicManager = new SchematicManager(plugin.getDataFolder());
-        this.plugin = plugin;
-/*
-        ConfigurationSection subRegionResetSection = config.getConfigurationSection("Modules.SubRegionReset");
-        if (subRegionResetSection == null)
-            subRegionResetSection = config.createSection("Modules.SubRegionReset");
-*/
-        List<Material> allowedBlocks = null; //(List<Material>)subRegionResetSection.getList("AllowedBlockTypes");
-        if (allowedBlocks == null || allowedBlocks.isEmpty()) {
-            freeBlocks.addAll(Arrays.stream(defaultFreeBlockTypes).map(BukkitAdapter::asBlockType).collect(Collectors.toSet()));
-        } else {
-            freeBlocks.addAll(allowedBlocks.stream().map(BukkitAdapter::asBlockType).collect(Collectors.toSet()));
+        super(new WorldEditImpl(), new AsyncWorldEditImpl(), new SchematicManager(plugin.getDataFolder()));
+
+        defaultFree.addAll(Arrays.stream(defaultFreeBlockTypes).map(BukkitAdapter::asBlockType).collect(Collectors.toSet()));
+        defaultBlocked.addAll(Arrays.stream(notAllowedBlockTypes).map(BukkitAdapter::asBlockType).collect(Collectors.toSet()));
+        BlockType.REGISTRY.forEach(blockType -> {
+            if(blockType.getPropertyMap().keySet().contains("age"))
+                defaultBlocked.add(blockType);
+        });
+    }
+
+    public BlockBag getBlockBag(Collection<Location> locs) {
+        Set<Container> chests = locs.stream().map(Location::getBlock).map(Block::getState)
+                .filter(c -> c instanceof Container).map(c -> (Container)c).collect(Collectors.toSet());
+        return new CityBlockBag(chests, defaultBlocked, defaultFree);
+    }
+
+    public CompletableFuture<Boolean> restoreRegion(JavaPlugin requester, Player player,
+                                                                    String schematic, World world, ProtectedRegion target,
+                                                                    BlockBag bag, AbstractExtension ... extensions) {
+        Clipboard clipboard;
+        try {
+            clipboard = schemManager.loadSchematic(schematic);
+            removeInventory(clipboard);
+        } catch (IOException | WorldEditException e) {
+            return CompletableFuture.failedFuture(e);
         }
-    }
+        SchematicToRegionTask task = new SchematicToRegionTask(requester, player, "Backup", clipboard, world, target);
+        task.setBlockBag(bag);
+        task.setMask(Masks.negate(new BlockTypeMask(new NullExtent(), defaultBlocked)));
+        task.getExtensions().addAll(Arrays.asList(extensions));
 
-    public abstract void backupSubRegion(
-            JavaPlugin requester,
-            ProtectedRegion protectedRegion,
-            World world,
-            String schematicPath) throws IOException, WorldEditException;
+        RegionEvent restoreEvent = new RegionEvent(task);
+        Bukkit.getPluginManager().callEvent(restoreEvent);
+        if(restoreEvent.isCancelled()) return CompletableFuture.failedFuture(new InterruptedException());
 
-    public abstract CompletableFuture<Map<BlockType, Integer>> restoreSubRegion(
-            JavaPlugin requester,
-            Player player,
-            ProtectedRegion subRegion,
-            Set<Location> cityChestLocations,
-            World world,
-            String schematicPath);
-
-    public abstract CompletableFuture<Map<BlockType, Integer>> restoreSubRegion(
-            JavaPlugin requester,
-            Player player,
-            ProtectedRegion subRegion,
-            CityBlockBag bag,
-            World world,
-            String schematicPath);
-
-    public static Region toRegion(World world, ProtectedRegion region) {
-        if (region instanceof ProtectedCuboidRegion) {
-            BlockVector3 min = region.getMinimumPoint();
-            BlockVector3 max = region.getMaximumPoint();
-            return new CuboidRegion(world, min, max);
-        } else if (region instanceof ProtectedPolygonalRegion) {
-            return new Polygonal2DRegion(world, region.getPoints(),
-                    region.getMinimumPoint().getY(), region.getMaximumPoint().getY());
+        task.getExtensions().forEach(extension -> extension.preExecute(task));
+        CompletableFuture<Boolean> future;
+        if(clipboard.getRegion().getArea() > maxWorldEditBlockAmount) {
+            requester.getLogger().info("Using AWE for completing task \"" + task.getTag() + "\".");
+            future = asyncWorldEdit.copySchematic(task);
         } else {
-            throw new RuntimeException("Unknown region type: " + region.getClass().getCanonicalName());
+            requester.getLogger().info("Using WorldEdit for completing task \"" + task.getTag() + "\".");
+            future = worldEdit.copySchematic(task);
         }
+        future.thenApply(blocks -> {
+            task.getExtensions().forEach(extension -> extension.postExecute(task));
+            return blocks;
+        });
+        return future;
     }
 
-    private static boolean findMaterial(BlockType type, Map<Material, Integer> amountByType) {
-        Material adapt = BukkitAdapter.adapt(type);
-        boolean containsMaterial = amountByType.containsKey(adapt);
-        amountByType.computeIfPresent(adapt, (material, amount) -> (--amount == 0) ? null : amount);
-        return containsMaterial;
-    }
 
-    public CompletableFuture<RegionBlocks> getNeededMaterials(World world,
-                                                              ProtectedRegion region,
-                                                              Set<Location> cityChests,
-                                                              String schematicPath)
-            throws IOException, MaxChangedBlocksException {
-
+    public CompletableFuture<RegionBlocks> getNeededMaterial
+            (JavaPlugin plugin, World world, ProtectedRegion protectedRegion, String file, Collection<Location> cityChests) {
         Map<Material, Integer> amountByType = cityChests.stream()
                 .map(location -> location.getBlock().getState())
                 .filter(c -> c instanceof Container)
@@ -143,14 +123,23 @@ public abstract class BackupManager {
                         summingInt(ItemStack::getAmount)
                 ));
 
-        Clipboard toCopy = schematicManager.loadSchematic(schematicPath);
+        Clipboard toCopy;
+        try {
+            toCopy = schemManager.loadSchematic(file);
+        } catch (IOException e) {
+            return CompletableFuture.failedFuture(e);
+        }
 
-        Region weRegion = toRegion(world, region);
+        Region weRegion = toRegion(world, protectedRegion);
         BlockArrayClipboard clipboard = new BlockArrayClipboard(weRegion);
         EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(world, -1);
         ForwardExtentCopy copy = new ForwardExtentCopy(editSession, weRegion, clipboard, weRegion.getMinimumPoint());
         copy.setCopyingEntities(false);
-        Operations.completeLegacy(copy);
+        try {
+            Operations.completeLegacy(copy);
+        } catch (MaxChangedBlocksException e) {
+            return CompletableFuture.failedFuture(e);
+        }
 
         CompletableFuture<RegionBlocks> future = new CompletableFuture<>();
 
@@ -159,11 +148,11 @@ public abstract class BackupManager {
             for (BlockVector3 blockVector3 : weRegion) {
                 BlockType newBlock = toCopy.getBlock(blockVector3).getBlockType();
                 BlockType currentBlock = clipboard.getBlock(blockVector3).getBlockType();
-                if (newBlock.equals(currentBlock)) {
-                    blocks.addBlock(newBlock, RegionBlocks.Status.PLACED);
-                } else if (deniedBlocks.contains(newBlock)) {
+                if (defaultBlocked.contains(newBlock)) {
                     blocks.addBlock(newBlock, RegionBlocks.Status.DENIED);
-                } else if (freeBlocks.contains(newBlock)) {
+                } else if (newBlock.equals(currentBlock)) {
+                    blocks.addBlock(newBlock, RegionBlocks.Status.PLACED);
+                } else if (defaultFree.contains(newBlock)) {
                     blocks.addBlock(newBlock, RegionBlocks.Status.FREE);
                 } else if (findMaterial(newBlock, amountByType)) {
                     blocks.addBlock(newBlock, RegionBlocks.Status.IN_BLOCKBAG);
@@ -176,37 +165,10 @@ public abstract class BackupManager {
         return future;
     }
 
-    public boolean hasBackup(String path) {
-        return getSchematicManager().hasSchematic(path);
-    }
-
-    public void removeBackup(String schematicPath) {
-        schematicManager.removeSchematic(schematicPath);
-    }
-
-    public SchematicManager getSchematicManager() {
-        return schematicManager;
-    }
-
-    public Set<BlockType> getDeniedBlocks() {
-        return deniedBlocks;
-    }
-
-    public Set<BlockType> getFreeBlocks() {
-        return freeBlocks;
-    }
-
-    public static void removeInventory(Clipboard clipboard) throws WorldEditException {
-        for (BlockVector3 vector3 : clipboard.getRegion()) {
-            BaseBlock block = clipboard.getFullBlock(vector3);
-            if(block.getNbtData() != null && block.getNbtData().getListTag("Items") != null) {
-                CompoundTag nbtData = block.getNbtData();
-                Map<String, Tag> newNbtData = new HashMap<>(nbtData.getValue());
-                newNbtData.remove("Items");
-                CompoundTag compoundTag = nbtData.setValue(newNbtData);
-                BaseBlock newBaseBlock = block.toBaseBlock(compoundTag);
-                clipboard.setBlock(vector3, newBaseBlock);
-            }
-        }
+    private static boolean findMaterial(BlockType type, Map<Material, Integer> amountByType) {
+        Material adapt = BukkitAdapter.adapt(type);
+        boolean containsMaterial = amountByType.containsKey(adapt);
+        amountByType.computeIfPresent(adapt, (material, amount) -> (--amount == 0) ? null : amount);
+        return containsMaterial;
     }
 }

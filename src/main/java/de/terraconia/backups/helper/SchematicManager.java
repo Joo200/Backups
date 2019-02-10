@@ -1,4 +1,4 @@
-package de.terraconia.backups.manager;
+package de.terraconia.backups.helper;
 
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.*;
@@ -42,10 +42,6 @@ public class SchematicManager {
         if (file.exists()) {
             file.delete();
         }
-    }
-
-    public String getRegionPath(int cityId) {
-        return baseDir + "/" + cityId + "/";
     }
 
     private Clipboard getSchematic(File file) throws IOException {

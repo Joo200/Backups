@@ -35,7 +35,7 @@ dependencies {
      compile group: 'tc.plugins', name: 'worldedit', version: 'SERVER-SNAPSHOT', changing: true, transitive: false
     compile group: 'tc.plugins', name: 'worldguard', version: 'SERVER-SNAPSHOT', changing: true, transitive: false
     compile group: 'tc.plugins', name: 'AsyncWorldEdit', version: 'SERVER-SNAPSHOT', changing: true, transitive: false
-    
-    //TODO: Find repo for LWC
+    compile group: 'de.terraconia', name: 'Baba43Lib-Bukkit', version: 'SERVER-SNAPSHOT', changing: true, transitive: false
+
     compile group: 'tc.plugins', name: 'lwc', version: 'SERVER-SNAPSHOT', changing: true, transitive: false
 }

@@ -1,37 +1,28 @@
 package de.terraconia.backups.events;
 
-import com.sk89q.worldedit.world.World;
-import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import de.terraconia.backups.tasks.AbstractTask;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class RegionRestoreEvent extends Event implements Cancellable {
-    private JavaPlugin restorePlugin;
-    private ProtectedRegion region;
-    private World world;
+public class RegionEvent extends Event implements Cancellable {
+    private AbstractTask task;
 
     private boolean isCancelled = false;
 
     private static HandlerList handlerList = new HandlerList();
 
-    public RegionRestoreEvent(JavaPlugin restorePlugin, ProtectedRegion region, World world) {
-        this.restorePlugin = restorePlugin;
-        this.region = region;
-        this.world = world;
+    public RegionEvent(AbstractTask task) {
+        this.task = task;
     }
 
     public JavaPlugin getRestorePlugin() {
-        return restorePlugin;
+        return task.getPlugin();
     }
 
-    public ProtectedRegion getRegion() {
-        return region;
-    }
-
-    public World getWorld() {
-        return world;
+    public AbstractTask getTask() {
+        return task;
     }
 
     @Override

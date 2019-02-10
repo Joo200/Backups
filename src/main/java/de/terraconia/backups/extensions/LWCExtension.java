@@ -1,32 +1,37 @@
 package de.terraconia.backups.extensions;
-/*
+
 import com.griefcraft.lwc.LWC;
 import com.griefcraft.model.Protection;
-import com.griefcraft.sql.PhysDB;
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
-import com.sk89q.worldedit.world.block.BlockState;
-import de.terraconia.backups.events.RegionRestoreEvent;
-import de.terraconia.backups.plugin.BackupPlugin;
-import org.bukkit.Location;
-import org.bukkit.block.Block;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
+import de.terraconia.backups.tasks.AbstractTask;
 
-import java.lang.reflect.Field;
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
-import static de.terraconia.backups.manager.BackupManager.toRegion;
+public class LWCExtension extends AbstractExtension {
+    public static LWCExtension REMOVE_ALL = new LWCExtension(true);
+    public static LWCExtension REMOVE_UNPROTECTABLE = new LWCExtension(false);
 
-public class LWCExtension implements Listener {
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onRestoreEvent(RegionRestoreEvent event) {
-        if(event.isCancelled()) return;
-        BlockVector3 minimum = event.getRegion().getMinimumPoint();
-        BlockVector3 maximum = event.getRegion().getMaximumPoint();
+    private boolean removeLocks;
+    private Collection<UUID> allowedUuids = null;
+
+    private LWCExtension(boolean removeLocks) {
+        this.removeLocks = removeLocks;
+    }
+
+    public LWCExtension(Set<UUID> allowedUuids) {
+        this.allowedUuids = allowedUuids;
+    }
+
+    @Override
+    public void postExecute(AbstractTask task) {
+        Region region = task.getAffectedRegion();
+        if(region == null || region.getWorld() == null) return;
+        BlockVector3 minimum = region.getMinimumPoint();
+        BlockVector3 maximum = region.getMaximumPoint();
         int minBlockX = minimum.getBlockX();
         int minBlockY = minimum.getBlockY();
         int minBlockZ = minimum.getBlockZ();
@@ -35,9 +40,19 @@ public class LWCExtension implements Listener {
         int maxBlockZ = maximum.getBlockZ();
         int numBlocks = (maxBlockX - minBlockX + 1) * (maxBlockY - minBlockY + 1) * (maxBlockZ - minBlockZ + 1);
         List<Protection> protections = LWC.getInstance().getPhysicalDatabase().loadProtections(
-                event.getWorld().getName(), minBlockX, maxBlockX, minBlockY, maxBlockY, minBlockZ, maxBlockZ);
-        protections.forEach(Protection::remove);
-        event.getRestorePlugin().getLogger()
-                .info("Removed " + protections + " from restored region " + event.getRegion().getId());
+                region.getWorld().getName(), minBlockX, maxBlockX, minBlockY, maxBlockY, minBlockZ, maxBlockZ);
+        if(allowedUuids != null) {
+            protections.stream().filter(protection -> {
+                try {
+                    UUID uuid = UUID.fromString(protection.getOwner());
+                    return allowedUuids.contains(uuid);
+                } catch(IllegalArgumentException ignored) { }
+                return false;
+            }).forEach(Protection::remove);
+        }
+        protections.stream().filter(protection -> !LWC.getInstance().isProtectable(protection.getBlock()))
+                .forEach(Protection::remove);
+        task.getPlugin().getLogger()
+                .info("Removed " + protections.size() + " from changed region in world " + region.getWorld().getName() + ".");
     }
-}*/
+}

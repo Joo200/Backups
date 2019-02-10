@@ -1,4 +1,4 @@
-package de.terraconia.backups.manager;
+package de.terraconia.backups.old.backup;
 
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.EditSessionFactory;
@@ -6,9 +6,6 @@ import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
-import com.sk89q.worldedit.function.mask.BlockTypeMask;
-import com.sk89q.worldedit.function.mask.Mask;
-import com.sk89q.worldedit.function.mask.Masks;
 import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.regions.Region;
@@ -18,8 +15,8 @@ import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import de.terraconia.backups.blockbag.CityBlockBag;
 import de.terraconia.backups.events.RegionRestoreEvent;
-import de.terraconia.backups.helper.AsyncWorldEditHelper;
 import de.terraconia.backups.helper.AsyncWorldEditQueue;
+import de.terraconia.backups.helper.PasteAction;
 import de.terraconia.backups.plugin.BackupPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -30,13 +27,14 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.primesoft.asyncworldedit.AsyncWorldEditBukkit;
 import org.primesoft.asyncworldedit.api.playerManager.IPlayerManager;
 import org.primesoft.asyncworldedit.api.worldedit.IAsyncEditSessionFactory;
-import org.primesoft.asyncworldedit.api.worldedit.IThreadSafeEditSession;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+
+import static de.terraconia.backups.helper.WorldEditHelper.toRegion;
 
 public class AweBackupManager extends BackupManager {
     private IAsyncEditSessionFactory factory;
@@ -73,43 +71,8 @@ public class AweBackupManager extends BackupManager {
                                                                        String schematicPath) {
         Set<Container> chests = cityChestLocations.stream().map(Location::getBlock).map(Block::getState)
                 .filter(c -> c instanceof Container).map(c -> (Container)c).collect(Collectors.toSet());
+        Bukkit.getLogger().info("Size of chests: " + chests.size());
         CityBlockBag bag = new CityBlockBag(chests, getDeniedBlocks(), getFreeBlocks());
         return restoreSubRegion(requester, player, subRegion, bag, world, schematicPath);
-    }
-
-    @Override
-    public CompletableFuture<Map<BlockType, Integer>> restoreSubRegion(JavaPlugin requester,
-                                                                       Player player,
-                                                                       ProtectedRegion subRegion,
-                                                                       CityBlockBag bag,
-                                                                       World world,
-                                                                       String schematicPath) {
-        RegionRestoreEvent restoreEvent = new RegionRestoreEvent(requester, subRegion, world);
-        Bukkit.getPluginManager().callEvent(restoreEvent);
-        if(restoreEvent.isCancelled()) return null;
-
-        Clipboard toCopy = null;
-        try {
-            toCopy = getSchematicManager().loadSchematic(schematicPath);
-        } catch (IOException e) {
-            return CompletableFuture.failedFuture(e);
-        }
-        try {
-            removeInventory(toCopy);
-        } catch (WorldEditException e) {
-            return CompletableFuture.failedFuture(e);
-        }
-
-        AsyncWorldEditHelper.PasteAction action = new AsyncWorldEditHelper.PasteAction(
-                subRegion.getMinimumPoint(),
-                new ClipboardHolder(toCopy), false);
-        //TODO: Listener
-        AsyncWorldEditQueue queue = new AsyncWorldEditQueue(player, world, "Grundstückswiederherstellung", bag);
-        queue.setBlockMask(new BlockTypeMask(queue.getEditSession(), getDeniedBlocks()));
-        queue.addJob(action);
-        queue.start();
-        return queue.getFuture().thenApply(aBoolean ->
-                queue.getEditSession().popMissingBlocks()
-        );
     }
 }

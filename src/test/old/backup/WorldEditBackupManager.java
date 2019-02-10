@@ -1,4 +1,4 @@
-package de.terraconia.backups.manager;
+package de.terraconia.backups.old.backup;
 
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
@@ -17,8 +17,8 @@ import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import de.terraconia.backups.blockbag.CityBlockBag;
+import de.terraconia.backups.events.RegionFinishEvent;
 import de.terraconia.backups.events.RegionRestoreEvent;
-import de.terraconia.backups.events.RegionRestoreFinishEvent;
 import de.terraconia.backups.plugin.BackupPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -32,6 +32,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+
+import static de.terraconia.backups.helper.WorldEditHelper.toRegion;
 
 public class WorldEditBackupManager extends BackupManager {
 
@@ -115,7 +117,7 @@ public class WorldEditBackupManager extends BackupManager {
         }
         session.flushSession();
 
-        RegionRestoreFinishEvent finishEvent = new RegionRestoreFinishEvent(requester, subRegion, world);
+        RegionFinishEvent finishEvent = new RegionFinishEvent(requester, player, subRegion, world);
         Bukkit.getPluginManager().callEvent(finishEvent);
         return CompletableFuture.completedFuture(session.popMissingBlocks());
     }

@@ -13,6 +13,8 @@ import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.extent.inventory.BlockBag;
 import com.sk89q.worldedit.function.mask.Mask;
 import com.sk89q.worldedit.world.World;
+import de.terraconia.backups.tasks.SchematicTask;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.primesoft.asyncworldedit.AsyncWorldEditMain;
 import org.primesoft.asyncworldedit.api.blockPlacer.IBlockPlacer;
@@ -38,19 +40,41 @@ public class AsyncWorldEditQueue {
     private final String id;
     private final StatusListener listener;
 
-    public AsyncWorldEditQueue(Player player, World world, String displayName, BlockBag bag) {
-        final AsyncWorldEditMain awe = AsyncWorldEditHelper.awe;
+    public AsyncWorldEditQueue(Player player, World target, String displayName) {
+        final AsyncWorldEditMain awe = AsyncWorldEditMain.getInstance();
         this.player = awe.getPlayerManager().getPlayer(player.getUniqueId());
         IAsyncEditSessionFactory factory = (IAsyncEditSessionFactory) WorldEdit.getInstance().getEditSessionFactory();
-        this.editSession = factory.getThreadSafeEditSession(world, -1, bag, BukkitAdapter.adapt(player));
+        this.editSession = factory.getThreadSafeEditSession(target, -1, BukkitAdapter.adapt(player));
         this.id = displayName;
+        this.done = new CompletableFuture<>();
+        this.placer = awe.getBlockPlacer();
+        this.placer.setPause(true);
+        this.listener = new StatusListener(id);
+        this.placer.addListener(listener);
+    }
 
+    public AsyncWorldEditQueue(SchematicTask task) {
+        this(task.getPlayer(), task.getTarget(), task.getTag(), task.getBlockBag());
+        if(task.getMask() != null) this.editSession.setMask(task.getMask());
+    }
+
+    public AsyncWorldEditQueue(Player player, World world, String displayName, BlockBag bag) {
+        final AsyncWorldEditMain awe = AsyncWorldEditMain.getInstance();
+        this.player = awe.getPlayerManager().getUnknownPlayer();
+        IAsyncEditSessionFactory factory = (IAsyncEditSessionFactory) WorldEdit.getInstance().getEditSessionFactory();
+        this.editSession = // factory.getThreadSafeEditSession(world, -1, bag, BukkitAdapter.adapt(player));
+        factory.getThreadSafeEditSession(world, -1, bag);
+        this.id = displayName;
         this.done = new CompletableFuture<>();
 
         this.placer = awe.getBlockPlacer();
         this.placer.setPause(true);
         this.listener = new StatusListener(id);
         this.placer.addListener(listener);
+        getFuture().thenApply(aBoolean -> {
+            this.placer.removeListener(this.listener);
+            return aBoolean;
+        });
     }
 
     public void addJob(IFuncParamEx<Integer,ICancelabeEditSession,MaxChangedBlocksException> job) {
@@ -79,7 +103,6 @@ public class AsyncWorldEditQueue {
     private class StatusListener implements IBlockPlacerListener {
 
         private final String id;
-        private int jobs = 0;
         private final IJobEntryListener jobEntryListener;
 
         private StatusListener(String id) {
@@ -92,6 +115,7 @@ public class AsyncWorldEditQueue {
                 JobStatus status = job.getStatus();
 
                 if (status == JobStatus.Done || status == JobStatus.Canceled) {
+                    Bukkit.getLogger().info("Missing Size: " + editSession.popMissingBlocks());
                     done.complete(status == JobStatus.Done);
                 }
             };
@@ -100,23 +124,15 @@ public class AsyncWorldEditQueue {
 
         @Override
         public void jobRemoved(IJobEntry job) {
-            if(!job.getName().equalsIgnoreCase(id)) {
-                return;
-            }
-
-            if (--jobs == 0) {
+            if(job.getName().equalsIgnoreCase(id)) {
                 job.removeStateChangedListener(jobEntryListener);
-                AsyncWorldEditQueue.this.placer.removeListener(AsyncWorldEditQueue.this.listener);
+                // AsyncWorldEditQueue.this.placer.removeListener(AsyncWorldEditQueue.this.listener);
             }
         }
 
         @Override
         public void jobAdded(IJobEntry job) {
-            if(!job.getName().equalsIgnoreCase(id)) {
-                return;
-            }
-
-            if (jobs++ == 0) {
+            if(job.getName().equalsIgnoreCase(id)) {
                 job.addStateChangedListener(jobEntryListener);
             }
         }

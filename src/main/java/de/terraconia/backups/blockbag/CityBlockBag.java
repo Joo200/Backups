@@ -12,21 +12,20 @@ import org.bukkit.Bukkit;
 import org.bukkit.block.Container;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Created by Joo200 on 08.11.2018.
- */
+
 public class CityBlockBag extends BlockBag {
     private Map<Container, ItemStack[]> inventories = new HashMap<>();
-    private final Set<BlockType> dontReplace;
-    private final Set<BlockType> replaceFree;
+    private final Collection<BlockType> dontReplace;
+    private final Collection<BlockType> replaceFree;
 
     public CityBlockBag(Set<Container> chests,
-                        Set<BlockType> dontReplace,
-                        Set<BlockType> replaceFree) {
+                        Collection<BlockType> dontReplace,
+                        Collection<BlockType> replaceFree) {
         chests.forEach(c -> inventories.put(c, null));
         this.dontReplace = dontReplace;
         this.replaceFree = replaceFree;
@@ -46,18 +45,14 @@ public class CityBlockBag extends BlockBag {
     @Override
     public void fetchBlock(BlockState blockState) throws BlockBagException {
         BlockType type = blockState.getBlockType();
-        Bukkit.getLogger().info("Block: " + blockState.getBlockType().getId());
         if(dontReplace.contains(type)) {
-            Bukkit.getLogger().info("don't place.");
             throw new UnplaceableBlockException();
         }
         if(replaceFree.contains(type)) {
-            Bukkit.getLogger().info("is free.");
             return;
         }
 
         loadInventory();
-
 
         for (ItemStack[] items : inventories.values()) {
             for (int slot = 0; slot < items.length; ++slot) {
@@ -127,6 +122,7 @@ public class CityBlockBag extends BlockBag {
     @Override
     public void flushChanges() {
         for(Map.Entry<Container, ItemStack[]> inv : inventories.entrySet()) {
+            if(inv.getValue() == null) continue;
             inv.getKey().getWorld().loadChunk(inv.getKey().getLocation().getChunk());
             inv.getKey().getInventory().setContents(inv.getValue());
             inv.setValue(null);

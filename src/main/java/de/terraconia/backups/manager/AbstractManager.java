@@ -44,4 +44,8 @@ abstract class AbstractManager {
     public boolean hasSchematic(String path) {
         return schemManager.hasSchematic(path);
     }
+
+    public void removeSchematic(String path) {
+        schemManager.removeSchematic(path);
+    }
 }

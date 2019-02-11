@@ -9,6 +9,7 @@ import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TranslatableComponent;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
@@ -65,9 +66,11 @@ public class RegionBlocks {
         }
     }
 
+
     public void send(Player player, int page, String header, String command) {
-        int offset = (page-1)*15;
         int max = (getStorageContent().size() + 15 - 1) / 15;
+        if(max >= page) page = 1;
+        int offset = (page-1)*15;
         new PageHeader(header, command, page, max).send(player);
         getStorageContent().entrySet().stream().
                 filter(entry -> entry.getValue().get(Status.DENIED) == 0).

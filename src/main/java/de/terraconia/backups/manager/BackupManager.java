@@ -55,8 +55,8 @@ public class BackupManager extends AbstractManager {
     private List<BlockType> defaultBlocked = new ArrayList<>();
     private List<BlockType> defaultFree = new ArrayList<>();
 
-    public BackupManager(BackupPlugin plugin) {
-        super(new WorldEditImpl(), new AsyncWorldEditImpl(), new SchematicManager(plugin.getDataFolder()));
+    public BackupManager(WorldEditImpl worldEdit, AsyncWorldEditImpl asyncWorldEdit, SchematicManager schematicManager) {
+        super(worldEdit, asyncWorldEdit, schematicManager);
 
         defaultFree.addAll(Arrays.stream(defaultFreeBlockTypes).map(BukkitAdapter::asBlockType).collect(Collectors.toSet()));
         defaultBlocked.addAll(Arrays.stream(notAllowedBlockTypes).map(BukkitAdapter::asBlockType).collect(Collectors.toSet()));

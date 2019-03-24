@@ -29,7 +29,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly group: 'org.spigotmc', name: 'spigot-api', version: '1.13.2-R0.1-SNAPSHOT'
+    compile group: 'tc.plugins', name: 'bukkit', version: 'SERVER-SNAPSHOT', changing: true, transitive: false
     compile group: 'org.dynmap', name: 'dynmap-api', version: '2.0', changing: true, transitive: false
     compile group: 'org.dynmap', name: 'dynmap', version: '2.0', changing: true, transitive: false
      compile group: 'tc.plugins', name: 'worldedit', version: 'SERVER-SNAPSHOT', changing: true, transitive: false

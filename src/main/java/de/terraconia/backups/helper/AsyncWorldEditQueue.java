@@ -64,6 +64,7 @@ public class AsyncWorldEditQueue {
         IAsyncEditSessionFactory factory = (IAsyncEditSessionFactory) WorldEdit.getInstance().getEditSessionFactory();
         this.editSession = // factory.getThreadSafeEditSession(world, -1, bag, BukkitAdapter.adapt(player));
         factory.getThreadSafeEditSession(world, -1, bag);
+        this.editSession.setFastMode(true);
         this.id = displayName;
         this.done = new CompletableFuture<>();
 
@@ -115,7 +116,6 @@ public class AsyncWorldEditQueue {
                 JobStatus status = job.getStatus();
 
                 if (status == JobStatus.Done || status == JobStatus.Canceled) {
-                    Bukkit.getLogger().info("Missing Size: " + editSession.popMissingBlocks());
                     done.complete(status == JobStatus.Done);
                 }
             };

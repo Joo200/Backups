@@ -69,7 +69,7 @@ public class RegionBlocks {
 
     public void send(Player player, int page, String header, String command) {
         int max = (getStorageContent().size() + 15 - 1) / 15;
-        if(max >= page) page = 1;
+        if(max < page) page = 1;
         int offset = (page-1)*15;
         new PageHeader(header, command, page, max).send(player);
         getStorageContent().entrySet().stream().

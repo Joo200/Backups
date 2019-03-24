@@ -36,12 +36,9 @@ public class PasteAction implements IFuncParamEx<Integer, ICancelabeEditSession,
             .to(this.origin)
             .ignoreAirBlocks(this.air)
             .build();
-        Bukkit.getLogger().info("Step 1: " + editSession.popMissingBlocks().size());
         Operations.completeBlindly(operation);
         editSession.flushSession();
-        Bukkit.getLogger().info("Step 2: " + editSession.popMissingBlocks().size());
 
         return editSession.getBlockChangeCount();
         }
-
 }

@@ -52,6 +52,12 @@ public class SchematicManager {
         if(clipboardFormat == null) {
             throw new IOException("No clipboard found by file name " + file.getAbsolutePath());
         }
+
+        try(ClipboardReader reader = clipboardFormat.getReader(new FileInputStream(file))) {
+            return reader.read();
+
+        }
+        /*
         Closer closer = Closer.create();
         FileInputStream fis = closer.register(new FileInputStream(file));
         BufferedInputStream bis = closer.register(new BufferedInputStream(fis));
@@ -59,6 +65,7 @@ public class SchematicManager {
         Clipboard clipboard = reader.read();
         closer.close();
         return clipboard;
+        */
     }
 
     private void saveClipboard(Clipboard clipboard, File file) throws IOException {
@@ -66,17 +73,22 @@ public class SchematicManager {
         if (format == null) {
             throw new IOException("Unknown schematic format: " + FORMAT_NAME);
         }
-        Closer closer = Closer.create();
         File parent = file.getParentFile();
         if(parent != null && !parent.exists()) {
             if(!parent.mkdirs())
                 throw new IOException("Could not create folder for schematics.");
         }
 
+        try(ClipboardWriter writer = format.getWriter(new FileOutputStream(file))) {
+            writer.write(clipboard);
+        }
+        /*
+        Closer closer = Closer.create();
         FileOutputStream fos = closer.register(new FileOutputStream(file));
         BufferedOutputStream bos = closer.register(new BufferedOutputStream(fos));
         ClipboardWriter writer = closer.register(format.getWriter(bos));
         writer.write(clipboard);
         closer.close();
+        */
     }
 }

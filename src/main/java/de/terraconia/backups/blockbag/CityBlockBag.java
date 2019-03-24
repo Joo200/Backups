@@ -5,9 +5,11 @@ import com.sk89q.worldedit.extent.inventory.BlockBag;
 import com.sk89q.worldedit.extent.inventory.BlockBagException;
 import com.sk89q.worldedit.extent.inventory.OutOfBlocksException;
 import com.sk89q.worldedit.extent.inventory.UnplaceableBlockException;
+import com.sk89q.worldedit.registry.state.Property;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.world.block.BlockType;
+import com.sk89q.worldedit.world.block.BlockTypes;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Container;
 import org.bukkit.inventory.ItemStack;
@@ -67,12 +69,25 @@ public class CityBlockBag extends BlockBag {
                     continue;
                 }
 
+                int needed = 1;
+                BlockType blockType = blockState.getBlockType();
+                Map<String, ? extends Property> properties = blockType.getPropertyMap();
+                Property<?> property = properties.get("type");
+                if(property != null) {
+                    // workaround für doppelte Slabs
+                    if(!blockState.getBlockType().equals(BlockTypes.CHEST) &&
+                            !blockState.getBlockType().equals(BlockTypes.TRAPPED_CHEST) &&
+                            blockState.getState(property).equals("double")) {
+                        needed += 1;
+                    }
+                }
+
                 int currentAmount = bukkitItem.getAmount();
                 if (currentAmount < 0) {
                     // Unlimited
                     return;
                 }
-                if (currentAmount > 1) {
+                if (currentAmount > needed) {
                     //Bukkit.getLogger().info("old: " + entry.getKey().getInventory().getItem(slot).getAmount());
                     bukkitItem.setAmount(currentAmount - 1);
                     //Bukkit.getLogger().info("old: " + entry.getKey().getInventory().getItem(slot).getAmount());

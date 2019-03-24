@@ -1,14 +1,26 @@
 package de.terraconia.backups.manager;
 
+import com.sk89q.worldedit.EditSession;
+import com.sk89q.worldedit.MaxChangedBlocksException;
+import com.sk89q.worldedit.WorldEdit;
+import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
+import com.sk89q.worldedit.function.mask.BlockMask;
+import com.sk89q.worldedit.function.mask.Mask;
+import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
+import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.Region;
+import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.World;
 import de.terraconia.backups.CopyInterface;
 import de.terraconia.backups.events.RegionEvent;
 import de.terraconia.backups.events.RegionFinishEvent;
 import de.terraconia.backups.helper.SchematicManager;
+import de.terraconia.backups.tasks.CopyPasteTask;
 import de.terraconia.backups.tasks.SchematicTask;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
@@ -35,16 +47,37 @@ public class PasteManager extends AbstractManager {
         CompletableFuture<Boolean> future;
         if(clipboard.getRegion().getArea() > maxWorldEditBlockAmount) {
             requester.getLogger().info("Using AWE for completing task \"" + task.getTag() + "\".");
-            future = asyncWorldEdit.copyClipboard(task);
+            future = asyncWorldEdit.copySchematic(task);
         } else {
             requester.getLogger().info("Using WorldEdit for completing task \"" + task.getTag() + "\".");
-            future = worldEdit.copyClipboard(task);
+            future = worldEdit.copySchematic(task);
         }
         future.thenApply(aBoolean -> {
             RegionFinishEvent finishEvent = new RegionFinishEvent(task);
             Bukkit.getPluginManager().callEvent(finishEvent);
             return aBoolean;
         });
+        return future;
+    }
+
+    public CompletableFuture<Boolean> copyPaste(JavaPlugin requester, Player player, Region start, World target, String tag) throws MaxChangedBlocksException {
+        BlockArrayClipboard clipboard = new BlockArrayClipboard(start);
+        EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(start.getWorld(), -1);
+        ForwardExtentCopy copy = new ForwardExtentCopy(editSession, start, clipboard, start.getMinimumPoint());
+        copy.setCopyingEntities(false);
+        Operations.completeLegacy(copy);
+        ClipboardHolder holder = new ClipboardHolder(clipboard);
+
+        Mask mask = new BlockMask(editSession);
+
+        CompletableFuture<Boolean> future;
+        if(clipboard.getRegion().getArea() > maxWorldEditBlockAmount) {
+            requester.getLogger().info("Using AWE for completing task \"" + tag + "\".");
+            future = asyncWorldEdit.pasteRegion(player, holder, target, tag);
+        } else {
+            requester.getLogger().info("Using WorldEdit for completing task \"" + tag + "\".");
+            future = worldEdit.pasteRegion(player, holder, target, tag);
+        }
         return future;
     }
 }

@@ -11,7 +11,10 @@ public class BlockConstants {
             //Material.SAND.ordinal(),
             Material.WATER,
             Material.FIRE,
-            Material.COBBLESTONE
+            Material.COBBLESTONE,
+            Material.ANDESITE,
+            Material.DIORITE,
+            Material.GRANITE
     };
     public static final Material[] notAllowedBlockTypes = {
             // sowie Ageable
@@ -33,6 +36,8 @@ public class BlockConstants {
             Material.LIME_BED,
             Material.PINK_BED,
             Material.CYAN_BED,
-            Material.BROWN_BED
+            Material.BROWN_BED,
+            Material.SIGN,
+            Material.WALL_SIGN
     };
 }

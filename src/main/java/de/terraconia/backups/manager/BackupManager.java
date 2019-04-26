@@ -28,6 +28,7 @@ import de.terraconia.backups.impl.WorldEditImpl;
 import de.terraconia.backups.misc.RegionBlocks;
 import de.terraconia.backups.plugin.BackupPlugin;
 import de.terraconia.backups.tasks.SchematicToRegionTask;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -94,8 +95,10 @@ public class BackupManager extends AbstractManager {
         task.getExtensions().forEach(extension -> extension.preExecute(task));
         CompletableFuture<Boolean> future;
         if(clipboard.getRegion().getArea() > maxWorldEditBlockAmount) {
-            requester.getLogger().info("Using AWE for completing task \"" + task.getTag() + "\".");
-            future = asyncWorldEdit.copySchematic(task);
+            player.sendMessage(ChatColor.RED + "Durch das Update auf die 1.13.2 ist es temporär nicht möglich, Grundstücke über 60.000 Blöcke wieder herzustellen.");
+            return CompletableFuture.failedFuture(new InterruptedException());
+            //requester.getLogger().info("Using AWE for completing task \"" + task.getTag() + "\".");
+            //future = asyncWorldEdit.copySchematic(task);
         } else {
             requester.getLogger().info("Using WorldEdit for completing task \"" + task.getTag() + "\".");
             future = worldEdit.copySchematic(task);

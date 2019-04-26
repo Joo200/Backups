@@ -74,7 +74,7 @@ public class CityBlockBag extends BlockBag {
                 Map<String, ? extends Property> properties = blockType.getPropertyMap();
                 Property<?> property = properties.get("type");
                 if(property != null) {
-                    // workaround für doppelte Slabs
+                    // workaround fÃ¼r doppelte Slabs
                     if(!blockState.getBlockType().equals(BlockTypes.CHEST) &&
                             !blockState.getBlockType().equals(BlockTypes.TRAPPED_CHEST) &&
                             blockState.getState(property).equals("double")) {

@@ -7,9 +7,9 @@ import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.World;
-import com.sk89q.worldedit.world.block.BlockType;
 import de.terraconia.backups.CopyInterface;
 import de.terraconia.backups.tasks.SchematicTask;
+import de.terraconia.backups.manager.BackupManager;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
@@ -18,7 +18,8 @@ import java.util.concurrent.CompletableFuture;
 public class WorldEditImpl implements CopyInterface {
     @Override
     public CompletableFuture<Boolean> copySchematic(SchematicTask task) {
-        EditSession session = WorldEdit.getInstance().getEditSessionFactory().getEditSession(task.getTarget(), 25000);
+        EditSession session = WorldEdit.getInstance().getEditSessionFactory().getEditSession(task.getTarget(),
+                BackupManager.maxWorldEditBlockAmount);
         if(task.getBlockBag() != null) session.setBlockBag(task.getBlockBag());
         if(task.getMask() != null) session.setMask(task.getMask());
 
@@ -41,7 +42,8 @@ public class WorldEditImpl implements CopyInterface {
 
     @Override
     public CompletableFuture<Boolean> pasteRegion(Player player, ClipboardHolder clipboard, World world, String tag) {
-        EditSession session = WorldEdit.getInstance().getEditSessionFactory().getEditSession(world, 25000);
+        EditSession session = WorldEdit.getInstance().getEditSessionFactory().getEditSession(world,
+                BackupManager.maxWorldEditBlockAmount);
 
         Operation operation = clipboard.createPaste(session)
                 .ignoreAirBlocks(false)

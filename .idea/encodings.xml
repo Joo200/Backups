@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="Encoding">
-    <file url="file://$PROJECT_DIR$/src/main/java/de/terraconia/backups/blockbag/CityBlockBag.java" charset="windows-1252" />
-    <file url="file://$PROJECT_DIR$/src/main/java/de/terraconia/backups/helper/AsyncWorldEditQueue.java" charset="windows-1252" />
-    <file url="file://$PROJECT_DIR$/src/main/java/de/terraconia/backups/helper/SchematicManager.java" charset="windows-1252" />
-    <file url="file://$PROJECT_DIR$/src/test/old/backup/WorldEditBackupManager.java" charset="windows-1252" />
-    <file url="file://$PROJECT_DIR$/../HollowTravel/libs/HollowCore.jar" charset="windows-1252" />
+  <component name="Encoding" defaultCharsetForPropertiesFiles="UTF-8">
+    <file url="PROJECT" charset="UTF-8" />
   </component>
 </project>

@@ -23,7 +23,7 @@ abstract class AbstractManager {
     CopyInterface worldEdit;
     CopyInterface asyncWorldEdit;
     SchematicManager schemManager;
-    int maxWorldEditBlockAmount = 25000;
+    public static int maxWorldEditBlockAmount = 60000;
 
     AbstractManager(CopyInterface worldEdit, CopyInterface asyncWorldEdit, SchematicManager schemManager) {
         this.worldEdit = worldEdit;

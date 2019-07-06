@@ -23,7 +23,6 @@ import de.terraconia.backups.events.RegionEvent;
 import de.terraconia.backups.events.RegionFinishEvent;
 import de.terraconia.backups.extensions.AbstractExtension;
 import de.terraconia.backups.helper.SchematicManager;
-import de.terraconia.backups.impl.AsyncWorldEditImpl;
 import de.terraconia.backups.impl.WorldEditImpl;
 import de.terraconia.backups.misc.RegionBlocks;
 import de.terraconia.backups.plugin.BackupPlugin;
@@ -56,8 +55,8 @@ public class BackupManager extends AbstractManager {
     private List<BlockType> defaultBlocked = new ArrayList<>();
     private List<BlockType> defaultFree = new ArrayList<>();
 
-    public BackupManager(WorldEditImpl worldEdit, AsyncWorldEditImpl asyncWorldEdit, SchematicManager schematicManager) {
-        super(worldEdit, asyncWorldEdit, schematicManager);
+    public BackupManager(WorldEditImpl worldEdit, SchematicManager schematicManager) {
+        super(worldEdit, schematicManager);
 
         defaultFree.addAll(Arrays.stream(defaultFreeBlockTypes).map(BukkitAdapter::asBlockType).collect(Collectors.toSet()));
         defaultBlocked.addAll(Arrays.stream(notAllowedBlockTypes).map(BukkitAdapter::asBlockType).collect(Collectors.toSet()));

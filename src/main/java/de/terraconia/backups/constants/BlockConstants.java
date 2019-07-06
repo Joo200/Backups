@@ -8,6 +8,7 @@ public class BlockConstants {
             Material.DIRT,
             Material.GRASS,
             Material.GRASS_BLOCK,
+            Material.COARSE_DIRT,
             Material.FARMLAND,
             Material.GRASS_PATH,
             Material.STONE,

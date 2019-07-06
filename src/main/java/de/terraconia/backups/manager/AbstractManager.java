@@ -21,14 +21,13 @@ import static de.terraconia.backups.helper.WorldEditHelper.toRegion;
 
 abstract class AbstractManager {
     CopyInterface worldEdit;
-    CopyInterface asyncWorldEdit;
+    CopyInterface asyncWorldEdit = null;
     SchematicManager schemManager;
-    public static int maxWorldEditBlockAmount = 60000;
+    public static int maxWorldEditBlockAmount = 200000;
 
-    AbstractManager(CopyInterface worldEdit, CopyInterface asyncWorldEdit, SchematicManager schemManager) {
+    AbstractManager(CopyInterface worldEdit, SchematicManager schemManager) {
         this.worldEdit = worldEdit;
         this.schemManager = schemManager;
-        this.asyncWorldEdit = asyncWorldEdit;
     }
 
     public void saveSchematic(JavaPlugin plugin, World world, ProtectedRegion protectedRegion, String file) throws MaxChangedBlocksException, IOException {

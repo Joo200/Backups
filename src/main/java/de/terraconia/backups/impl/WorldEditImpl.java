@@ -20,6 +20,7 @@ public class WorldEditImpl implements CopyInterface {
     public CompletableFuture<Boolean> copySchematic(SchematicTask task) {
         EditSession session = WorldEdit.getInstance().getEditSessionFactory().getEditSession(task.getTarget(),
                 BackupManager.maxWorldEditBlockAmount);
+        session.setFastMode(true);
         if(task.getBlockBag() != null) session.setBlockBag(task.getBlockBag());
         if(task.getMask() != null) session.setMask(task.getMask());
 
@@ -44,6 +45,7 @@ public class WorldEditImpl implements CopyInterface {
     public CompletableFuture<Boolean> pasteRegion(Player player, ClipboardHolder clipboard, World world, String tag) {
         EditSession session = WorldEdit.getInstance().getEditSessionFactory().getEditSession(world,
                 BackupManager.maxWorldEditBlockAmount);
+        session.setFastMode(true);
 
         Operation operation = clipboard.createPaste(session)
                 .ignoreAirBlocks(false)

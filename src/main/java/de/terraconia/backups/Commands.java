@@ -39,6 +39,10 @@ public class Commands implements CommandExecutor {
             commandSender.sendMessage("2 Argumente erfordert.");
             return true;
         }
+        if(true) {
+            commandSender.sendMessage("AUS!");
+            return true;
+        }
         if(!(commandSender instanceof Player)) {
             return true;
         }

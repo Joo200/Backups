@@ -27,8 +27,8 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 public class PasteManager extends AbstractManager {
-    PasteManager(CopyInterface worldEdit, CopyInterface asyncWorldEdit, SchematicManager schemManager) {
-        super(worldEdit, asyncWorldEdit, schemManager);
+    PasteManager(CopyInterface worldEdit, SchematicManager schemManager) {
+        super(worldEdit, schemManager);
     }
 
     public CompletableFuture<Boolean> pasteSchematic(JavaPlugin requester, String schematic,
@@ -46,8 +46,8 @@ public class PasteManager extends AbstractManager {
 
         CompletableFuture<Boolean> future;
         if(clipboard.getRegion().getArea() > maxWorldEditBlockAmount) {
-            requester.getLogger().info("Using AWE for completing task \"" + task.getTag() + "\".");
-            future = asyncWorldEdit.copySchematic(task);
+            requester.getLogger().info("Using AWE for completing task \"" + task.getTag() + "\" with BIG size.");
+            future = worldEdit.copySchematic(task);
         } else {
             requester.getLogger().info("Using WorldEdit for completing task \"" + task.getTag() + "\".");
             future = worldEdit.copySchematic(task);
@@ -72,8 +72,8 @@ public class PasteManager extends AbstractManager {
 
         CompletableFuture<Boolean> future;
         if(clipboard.getRegion().getArea() > maxWorldEditBlockAmount) {
-            requester.getLogger().info("Using AWE for completing task \"" + tag + "\".");
-            future = asyncWorldEdit.pasteRegion(player, holder, target, tag);
+            requester.getLogger().info("Using WE for completing task \"" + tag + "\" with BIG size.");
+            future = worldEdit.pasteRegion(player, holder, target, tag);
         } else {
             requester.getLogger().info("Using WorldEdit for completing task \"" + tag + "\".");
             future = worldEdit.pasteRegion(player, holder, target, tag);

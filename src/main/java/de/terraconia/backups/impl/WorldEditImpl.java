@@ -21,6 +21,7 @@ public class WorldEditImpl implements CopyInterface {
         EditSession session = WorldEdit.getInstance().getEditSessionFactory().getEditSession(task.getTarget(),
                 BackupManager.maxWorldEditBlockAmount);
         session.setFastMode(true);
+        session.setReorderMode(EditSession.ReorderMode.FAST);
         if(task.getBlockBag() != null) session.setBlockBag(task.getBlockBag());
         if(task.getMask() != null) session.setMask(task.getMask());
 
@@ -46,6 +47,7 @@ public class WorldEditImpl implements CopyInterface {
         EditSession session = WorldEdit.getInstance().getEditSessionFactory().getEditSession(world,
                 BackupManager.maxWorldEditBlockAmount);
         session.setFastMode(true);
+        session.setReorderMode(EditSession.ReorderMode.FAST);
 
         Operation operation = clipboard.createPaste(session)
                 .ignoreAirBlocks(false)

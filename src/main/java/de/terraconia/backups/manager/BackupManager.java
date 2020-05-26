@@ -61,7 +61,7 @@ public class BackupManager extends AbstractManager {
         defaultFree.addAll(Arrays.stream(defaultFreeBlockTypes).map(BukkitAdapter::asBlockType).collect(Collectors.toSet()));
         defaultBlocked.addAll(Arrays.stream(notAllowedBlockTypes).map(BukkitAdapter::asBlockType).collect(Collectors.toSet()));
         BlockType.REGISTRY.forEach(blockType -> {
-            if(blockType.getPropertyMap().keySet().contains("age"))
+            if(blockType.getPropertyMap().containsKey("age"))
                 defaultBlocked.add(blockType);
         });
     }
@@ -94,7 +94,7 @@ public class BackupManager extends AbstractManager {
         task.getExtensions().forEach(extension -> extension.preExecute(task));
         CompletableFuture<Boolean> future;
         if(clipboard.getRegion().getArea() > maxWorldEditBlockAmount) {
-            player.sendMessage(ChatColor.RED + "Durch das Update auf die 1.13.2 ist es temporär nicht möglich, Grundstücke über 60.000 Blöcke wieder herzustellen.");
+            player.sendMessage(ChatColor.RED + "Dein Grundstück ist zu groß. Grundstücke über " +  maxWorldEditBlockAmount +" Blöcke wieder herzustellen ist nicht möglich.");
             return CompletableFuture.failedFuture(new InterruptedException());
             //requester.getLogger().info("Using AWE for completing task \"" + task.getTag() + "\".");
             //future = asyncWorldEdit.copySchematic(task);

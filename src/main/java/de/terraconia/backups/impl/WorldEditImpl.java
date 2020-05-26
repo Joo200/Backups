@@ -38,6 +38,7 @@ public class WorldEditImpl implements CopyInterface {
             return CompletableFuture.failedFuture(e);
         }
         session.flushSession();
+        if(session.getBlockBag() != null) session.getBlockBag().flushChanges();
         task.setMissingBlocks(session.popMissingBlocks());
         return CompletableFuture.completedFuture(true);
     }

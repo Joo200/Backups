@@ -41,7 +41,17 @@ public class BlockConstants {
             Material.PINK_BED,
             Material.CYAN_BED,
             Material.BROWN_BED,
-            Material.SIGN,
-            Material.WALL_SIGN
+            Material.OAK_SIGN,
+            Material.ACACIA_SIGN,
+            Material.BIRCH_SIGN,
+            Material.DARK_OAK_SIGN,
+            Material.JUNGLE_SIGN,
+            Material.SPRUCE_SIGN,
+            Material.OAK_WALL_SIGN,
+            Material.ACACIA_WALL_SIGN,
+            Material.BIRCH_WALL_SIGN,
+            Material.DARK_OAK_WALL_SIGN,
+            Material.JUNGLE_WALL_SIGN,
+            Material.SPRUCE_WALL_SIGN,
     };
 }

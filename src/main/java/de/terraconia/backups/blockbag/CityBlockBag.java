@@ -11,13 +11,11 @@ import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.block.Container;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 
 public class CityBlockBag extends BlockBag {
@@ -56,7 +54,22 @@ public class CityBlockBag extends BlockBag {
 
         loadInventory();
 
-        for (ItemStack[] items : inventories.values()) {
+        int needed = 1;
+
+        BlockType blockType = blockState.getBlockType();
+        Map<String, ? extends Property<?>> properties = blockType.getPropertyMap();
+        Property<?> property = properties.get("type");
+        if(property != null) {
+            // workaround für doppelte Slabs
+            if(!blockState.getBlockType().equals(BlockTypes.CHEST) &&
+                    !blockState.getBlockType().equals(BlockTypes.TRAPPED_CHEST) &&
+                    blockState.getState(property).equals("double")) {
+                needed += 1;
+            }
+        }
+
+        for (Map.Entry<Container, ItemStack[]> itemsEntry : inventories.entrySet()) {
+            ItemStack[] items = itemsEntry.getValue();
             for (int slot = 0; slot < items.length; ++slot) {
                 ItemStack bukkitItem = items[slot];
 
@@ -69,18 +82,6 @@ public class CityBlockBag extends BlockBag {
                     continue;
                 }
 
-                int needed = 1;
-                BlockType blockType = blockState.getBlockType();
-                Map<String, ? extends Property> properties = blockType.getPropertyMap();
-                Property<?> property = properties.get("type");
-                if(property != null) {
-                    // workaround für doppelte Slabs
-                    if(!blockState.getBlockType().equals(BlockTypes.CHEST) &&
-                            !blockState.getBlockType().equals(BlockTypes.TRAPPED_CHEST) &&
-                            blockState.getState(property).equals("double")) {
-                        needed += 1;
-                    }
-                }
 
                 int currentAmount = bukkitItem.getAmount();
                 if (currentAmount < 0) {
@@ -88,45 +89,18 @@ public class CityBlockBag extends BlockBag {
                     return;
                 }
                 if (currentAmount > needed) {
-                    //Bukkit.getLogger().info("old: " + entry.getKey().getInventory().getItem(slot).getAmount());
                     bukkitItem.setAmount(currentAmount - 1);
-                    //Bukkit.getLogger().info("old: " + entry.getKey().getInventory().getItem(slot).getAmount());
                     return;
-                } else {
+                } else if(currentAmount < needed) {
+                    needed -= currentAmount;
+                    items[slot] = null;
+                } else { // if currentAmount == needed
                     items[slot] = null;
                     return;
                 }
             }
         }
         throw new OutOfBlocksException();
-    }
-
-    private int removeItem(ItemStack is) {
-        int finalAmount = 0;
-        for (ItemStack[] items : inventories.values()) {
-            for (int slot = 0; slot < items.length; ++slot) {
-                ItemStack bukkitItem = items[slot];
-                if (bukkitItem == null) {
-                    continue;
-                }
-                if (!is.isSimilar(bukkitItem)) continue;
-                int currentAmount = bukkitItem.getAmount();
-                if (currentAmount < 0) {
-                    // Unlimited
-                    return is.getAmount();
-                }
-                int missing = is.getAmount()-finalAmount;
-                if (currentAmount > missing) {
-                    bukkitItem.setAmount(currentAmount - missing);
-                    finalAmount = is.getAmount();
-                    return finalAmount;
-                } else {
-                    items[slot] = null;
-                    finalAmount += currentAmount;
-                }
-            }
-        }
-        return finalAmount;
     }
 
     @Override

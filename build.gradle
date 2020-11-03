@@ -15,9 +15,6 @@ if (project.hasProperty('tcGradleScripts')) {
     apply from: tcGradleScripts + '/tc-project.gradle'
 }
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
-
 repositories {
     mavenCentral()
     //maven { url='http://maven.sk89q.com/repo/'}

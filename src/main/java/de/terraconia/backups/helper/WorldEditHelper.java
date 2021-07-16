@@ -8,18 +8,12 @@ import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedPolygonalRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.util.WorldEditRegionConverter;
 
 public abstract class WorldEditHelper {
     public static Region toRegion(World world, ProtectedRegion region) {
-        if (region instanceof ProtectedCuboidRegion) {
-            BlockVector3 min = region.getMinimumPoint();
-            BlockVector3 max = region.getMaximumPoint();
-            return new CuboidRegion(world, min, max);
-        } else if (region instanceof ProtectedPolygonalRegion) {
-            return new Polygonal2DRegion(world, region.getPoints(),
-                    region.getMinimumPoint().getY(), region.getMaximumPoint().getY());
-        } else {
-            throw new RuntimeException("Unknown region type: " + region.getClass().getCanonicalName());
-        }
+        Region blockVector3s = WorldEditRegionConverter.convertToRegion(region);
+        blockVector3s.setWorld(world);
+        return blockVector3s;
     }
 }

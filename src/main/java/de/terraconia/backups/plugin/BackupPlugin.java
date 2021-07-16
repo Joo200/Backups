@@ -4,11 +4,7 @@ import de.terraconia.backups.helper.SchematicManager;
 import de.terraconia.backups.impl.WorldEditImpl;
 import de.terraconia.backups.manager.BackupManager;
 import de.terraconia.backups.Commands;
-import de.terraconia.backups.extensions.DynmapExtension;
-//import de.terraconia.backups.extensions.LWCExtension;
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.dynmap.bukkit.DynmapPlugin;
 
 public class BackupPlugin extends JavaPlugin {
     private static BackupManager manager;

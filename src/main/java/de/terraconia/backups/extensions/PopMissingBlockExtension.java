@@ -1,9 +1,11 @@
 package de.terraconia.backups.extensions;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import de.baba43.lib.helper.TranslationHelper;
-import de.baba43.lib.helper.textcomponents.ComponentInfoBuilder;
 import de.terraconia.backups.tasks.AbstractTask;
+import de.terraconia.core.lib.helper.TranslationHelper;
+import de.terraconia.core.lib.helper.textcomponents.ComponentInfoBuilder;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -24,17 +26,15 @@ public class PopMissingBlockExtension extends AbstractExtension {
                     " wurde erfolgreich ausgeführt.").color(ChatColor.GRAY).create());
             return;
         }
-        ComponentInfoBuilder infoBuilder = new ComponentInfoBuilder();
-        infoBuilder.appendInfo("Fehlende Materialien bei Task " + task.getTag() + ":");
+        player.sendMessage(Component.text("Fehlende Materialien bei Task " + task.getTag() + ":", NamedTextColor.GRAY));
         task.getMissingBlocks().forEach(
             (blockType, amount) -> {
                 Material mat = BukkitAdapter.adapt(blockType);
                 String translate = TranslationHelper.toTranslatableComponent(mat);
                 if (translate == null) translate = blockType.getId();
-                TranslatableComponent translation = new TranslatableComponent(translate);
-                infoBuilder.newLine().getBuilder().reset();
-                infoBuilder.append(translation).append(new TextComponent(": " + amount));
+                Component comp = Component.translatable(translate)
+                        .append(Component.text(": " + amount));
+                player.sendMessage(comp);
             });
-        player.spigot().sendMessage(infoBuilder.getBuilder().create());
     }
 }

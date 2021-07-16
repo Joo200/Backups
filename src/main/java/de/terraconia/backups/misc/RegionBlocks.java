@@ -2,16 +2,18 @@ package de.terraconia.backups.misc;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.world.block.BlockType;
-import de.baba43.lib.helper.TranslationHelper;
-import de.baba43.lib.helper.textcomponents.ComponentInfoBuilder;
-import de.baba43.lib.helper.textcomponents.PageHeader;
+import de.terraconia.core.lib.helper.TranslationHelper;
+import de.terraconia.core.lib.helper.textcomponents.ComponentInfoBuilder;
+import de.terraconia.core.lib.helper.textcomponents.PageHeader;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TranslatableComponent;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -82,7 +84,7 @@ public class RegionBlocks {
                     Material mat = BukkitAdapter.adapt(entry.getKey());
                     String translate = TranslationHelper.toTranslatableComponent(mat);
                     if(translate == null) translate = entry.getKey().getId();
-                    TranslatableComponent translation = new TranslatableComponent(translate);
+                    Component translation = Component.translatable(translate);
                     int missing = storage.get(RegionBlocks.Status.MISSING);
                     int free = storage.get(RegionBlocks.Status.FREE);
                     int placed = storage.get(RegionBlocks.Status.PLACED);
@@ -92,11 +94,11 @@ public class RegionBlocks {
                             .appendInfo("Kostenlos", String.valueOf(free))
                             .appendInfo("schon platziert", String.valueOf(placed))
                             .appendInfo("gesamt benötigt", String.valueOf(needed));
-                    HoverEvent hEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, hover.getBuilder().create());
-                    translation.setHoverEvent(hEvent);
-                    translation.setColor(missing > 0 ? ChatColor.RED : ChatColor.GREEN);
-                    player.spigot().sendMessage(new ComponentBuilder(translation)
-                                    .append(": " + missing).color(ChatColor.GRAY).event(hEvent).create());
+                    HoverEvent<Component> hEvent = hover.getComponent().asHoverEvent();
+                    translation = translation.hoverEvent(hEvent);
+                    translation = translation.color(missing > 0 ? NamedTextColor.RED : NamedTextColor.GREEN);
+                    translation = translation.append(Component.text(": " + missing, NamedTextColor.GRAY).hoverEvent(hEvent));
+                    player.sendMessage(translation);
                 });
     }
 }
